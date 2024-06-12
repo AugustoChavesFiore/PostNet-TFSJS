@@ -12,6 +12,7 @@ function App() {
   const canvasRef = useRef(null);
   const [detector, setDetector] = useState(null);
   const [fullBodyVisible, setFullBodyVisible] = useState(0);
+  const [capturedImage, setCapturedImage] = useState(null);
 
   useEffect(() => {
     const runMoveNet = async () => {
@@ -30,9 +31,22 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    console.log(fullBodyVisible);
-  }, [fullBodyVisible]);
+  const captureImage = () => {
+    if (webcamRef.current) {
+      setCapturedImage(webcamRef.current.getScreenshot());
+    }
+  };
+
+  const stopModel = () => {
+    if (detector) {
+      cancelAnimationFrame(detect)
+      detector.dispose(); 
+      setDetector(null);
+    }
+  };
+
+  
+
 
   const checkFullBodyVisible = (keypoints) => {
     const fullBody = [
@@ -55,15 +69,22 @@ function App() {
       "rightAnkle",
     ];
 
-    return fullBody.every(part => {
+     const verify = fullBody.every(part => {
       const point = keypoints.find(point => point.part === part);
       return point && point.score >= 0.6 && point.position.x !== 0 && point.position.y !== 0;
     });
-  }
+    if(verify){
+      captureImage();
+      stopModel();
+    }
+
+  };
+
 
 
 
   const detect = async () => {
+    if (!detector) return;
     if (
       webcamRef.current !== null &&
       webcamRef.current.video.readyState === 4 &&
@@ -88,7 +109,7 @@ function App() {
           console.log("No poses detected");
         }
       } catch (error) {
-        console.error("Pose estimation error: ", error);
+        console.error("Pose estimation error: ");
       }
     }
     requestAnimationFrame(detect);
@@ -103,8 +124,7 @@ function App() {
 
     drawKeypoints(pose.keypoints, 0.8, ctx);
     drawSkeleton(pose.keypoints, 0.8, ctx);
-  }
-
+  };
 
   useEffect(() => {
     if (detector !== null) {
@@ -121,11 +141,18 @@ function App() {
     </header>
     <div className="container mx-auto">
       <h1 className="text-4xl text-center my-4">Pose Detection posenet model TF JS</h1>
-      <p className="text-center my-4">
+      {/* <p className="text-center my-4">
         Full body visible: {fullBodyVisible}
-      </p>
+      </p> */}
     </div>
-    <div className="relative p-4">
+    {
+      capturedImage ? (
+        <div className="container mx-auto">
+          <h2>Se detecto una persona </h2>
+          <img src={capturedImage} alt="Captured" />
+        </div>
+      ):(
+        <div className="relative p-4">
       <Webcam
         className="absolute"
         ref={webcamRef}
@@ -135,6 +162,8 @@ function App() {
         ref={canvasRef}
       />
     </div>
+      )
+    }
   </div>
   );
 }
