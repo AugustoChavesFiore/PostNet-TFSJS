@@ -112,6 +112,8 @@ export function drawSkeleton(keypoints, minConfidence, ctx, scale = 1) {
  * Draw pose keypoints onto a canvas
  */
 export function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
+
+  
   for (let i = 0; i < keypoints.length; i++) {
     const keypoint = keypoints[i];
 
